@@ -35,10 +35,6 @@ git add example.txt
 git commit -m "first commit"
 ```
 
-目前為止的歷史紀錄像這樣子
-
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/a4cc57f1721fba6f.png)
-
 --------------------------------------------
 
 我們在 example.txt 再新增一行 `我是第二行`
@@ -50,25 +46,15 @@ git add example.txt
 git commit -am "second commit"
 ```
 
-目前為止的歷史紀錄像這樣子
-
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/77933cb66dfa3154.png)
-
 ## 複習 merge
 
-事前工作準備好了以後我們要來創造**平行的兩個分支**，並且**製造衝突**。
+事前工作準備好了以後我們要來創造另外一個分支，並且**製造衝突**。
 
-建立 task2 以及 task3 兩個分支並切換到 task2 分支。
+建立 task2 分支並進入。
 
 ```bash
-git branch task2
-git branch task3
-git checkout task2
+git checkout -b task2
 ```
-
-目前為止的歷史紀錄像這樣子
-
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/133bb35b8426fb0c.png)
 
 -----------------------------------------
 
@@ -81,24 +67,37 @@ git add example.txt
 git commit -am "task2 commit"
 ```
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/223b620c9e0e6852.png)
-
 -----------------------------------------
 
-接著再切換到 task3 並在 example.txt 再新增一行 `我是 task3`
+我們在 example.txt 再新增一行 `我是第三行`
 
 然後提交
 
 ```
 git add example.txt
-git commit -am "task3 commit"
+git commit -am "third commit"
 ```
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/39d42a5f4f1bb845.png)
-
-到此為止我們完成了衝突的準備^^
-
 -----------------------------------
+
+接著回到 task2 分支。
+
+```bash
+git checkout task2
+```
+
+-----------------------------------------
+
+我們在 example.txt 再新增一行 `我是 task2 again`
+
+然後提交
+
+```
+git add example.txt
+git commit -am "task2 commit again"
+```
+
+
 
 ### fast-forward（快轉）合併
 

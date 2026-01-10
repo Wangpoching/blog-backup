@@ -97,98 +97,44 @@ git add example.txt
 git commit -am "task2 commit again"
 ```
 
+![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/origin.png)
 
+### 合併
 
-### fast-forward（快轉）合併
-
-首先我們把 issue2 合併到 master，因為兩者並沒有衝突，所以會執行 fast-forward（快轉）合併，我們首先切換到 master 分支並合併 issue2 分支。
+現在我們要合併 task2，會產生衝突
 
 ```bash
 git checkout master
 git merge task2
 ```
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/bd165fb929a34744.png)
-
--------------------------------------------
-
-### non-fast-forward（非快轉）合併
-
-現在我們要合併 task3，這次會產生衝突，因為 master/task2 有 `我是 task2` 這一行但是 task3 的取而代之是 `我是 task3`
-
-```bash
-git merge issue3
-```
-
-合併失敗了，我們打開 example.txt 來查看衝突
-
-```txt
-我是第一行
-我是第二行
-<<<<<<< HEAD
-我是 task2
-=======
-我是task3
->>>>>>> task3
-```
-
-我們將 example.txt 修改這樣
-
-```txt
-我是第一行
-我是第二行
-我是 task2
-我是task3
-```
+合併失敗了，我們打開 example.txt 解決衝突並存檔
 
 最後再重新提交
 
 ```bash
-git add myfile.txt
-git commit -am "合併 task3"
+git add example.txt
+git commit -am "合併 task2"
 ```
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/8ca816f40908babd.png)
+![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/Merge.png)
+
+這裡可以注意到合併後的 commit 會以時間先後穿插 master 以及 task2 的 commit
 
 ## rebase
 
-現在讓我們退回到到衝突的狀態
+如果我們回到 merge 以前的狀態這次改採 rebase
+
+現在我們切換到 task2 分支以後對 master 進行 rebase
 
 ```bash
-git reset --hard HEAD~
-```
-
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/101c6308c046fa64.png)
-
-現在我們切換到 task3 分支以後對 master 進行 rebase
-
-```bash
-git checkout task3
+git checkout task2
 git rebase master
 ```
 
 與 merge 的時候相同，我們一樣遇到了衝突無法合併的情況
 
-我們打開 example.txt 來查看衝突
-
-```txt
-我是第一行
-我是第二行
-<<<<<<< HEAD
-我是 task2
-=======
-我是task3
->>>>>>> task3
-```
-
-我們將 example.txt 修改這樣
-
-```txt
-我是第一行
-我是第二行
-我是 task2
-我是task3
-```
+我們打開 example.txt 來解決衝突並且存檔
 
 接著把 rebase 的流程繼續做完
 
@@ -197,34 +143,34 @@ git add example.txt
 git rebase --continue
 ```
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/f31d169a565eeb50.png)
+![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/Rebase.png)
 
 如果不想 rebase 了記得要 `git rebase --abort`
 
-## 比較 merge 與 rebase 的差異
+這邊大家注意到幾件事:
+1. Task2 的分支整條被拔起來重新放在 master 的最後面，這個動作就叫做 `renase`，意指請幫我重新從 master 長出來一次
+2. task2 2 原來的版號都改變成新的了
+3. 解決衝突以後沒有新增一個 commit
 
-最重要的環節來了，不知道小夥伴們有沒有發現這兩種合併方法的差異，我們再重現一次。
+最後我們再切回到 master 去把已經 rebase 過的 task2 給合併進來:
 
-### merge
+```bash
+git checkout master
+git merge task2
+```
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/0e622586f73f62fb.png)
+![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/Rebase_then_merge.png)
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/777d0cdca7c57d05.png)
+## rebase 的優劣
 
-### rebase
+### 優點
+* 不會在合併時產生多餘的 commit。
+* 合併時會依分支的 commit 排列，能夠比較清楚的 review issue 或 feature 處理的過程。如果使用 merge，在合併後就會依照時間順序穿插排列兩個分支的 commit。
+* 在貢獻開源專案的時候，如果在 push 前先做 rebase，那作者就能夠直接以 fast-forward 的方式合併，不需要再另外解衝突。
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/c1f733606be14217.png)
+### 缺點
+最大的缺點就是上方提到的，使用 rebase 會修改 commit 的歷史紀錄。
 
-![](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/d0aaab7f02a85693.png)
-
-在 merge 的地方我們在解決衝突以後需要再產生一個新的 commit，但是為甚麼 rebase 不用呢?
-
-在 rebase 的案例裡面我們從 task3 rebase master，而 rebase 的中文翻譯是「變基」，把從 task3 rebase master 翻成中文就是**「我，就是 task3 分支，我現在要重新定義我的參考基準，並且將使用 master 分支當做我新的參考基準」**，所以我們就注意到了，**task3 與 master 叉開的 commit 被刪除了，task3 被接在了 master 的後面**。
-
-merge 就比較好理解，分叉部分的 commit 都會被保留，只不過會有一個最新的 commit 來保留解決彼此衝突的部分~
-
------
------
 
 # git stash: 在工作區暫存檔案
 

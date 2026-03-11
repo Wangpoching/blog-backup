@@ -110,6 +110,100 @@ cookie 的內容包含 key 還有 value，也設定了在甚麼 domain 瀏覽器
 
 ![img](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/jh59Eu4.jpg)
 
-最後想補充一下，其實不是所有的實際的資料都會存放在 server 端的資料庫，像是紀錄目前所在的分頁的話，就適合直接存在瀏覽器的 cookie 裡。
+補充一下，其實不是所有的實際的資料都會存放在 server 端的資料庫，像是紀錄目前所在的分頁的話，就適合直接存在瀏覽器的 cookie 裡。
 
+## Cookie-based Session、Hash 與 JWT
+還記得老闆娘有想過要把大冰奶的寄杯數量給放在客人的手機裡然後加密起來讓客人沒辦法隨意修改嗎? 但是當資料很多很長的時候加密過後的資料也很長，除此之外，客人在手機上也沒辦法看到自己到底寄了幾杯大冰奶，真的很讓人困擾欸。
 
+我們回到老闆娘會給客人紙條寫上還剩下幾杯大冰奶寄杯的時候。
+
+老闆娘已經領教了竄改紙條資訊的客人的教訓了。
+這時候小明來買了五杯大冰奶然後全部寄杯，老闆娘一樣給了小明一張紙條寫上：
+```
+客人: 小明
+寄杯數量: 5
+```
+只不過這次老闆娘神秘兮兮地在紙條右下角寫上了 85。
+
+小明回家以後把紙條上的寄杯數字加了一個 0 改成了 50 杯。
+「欸嘿嘿嘿」，只是加了一個 0 肯定不會被發現的嘻嘻。
+
+但當小明隔了一個禮拜去早餐店領寄盃的時候，只見老闆娘拿筆算了一算。
+「操你媽唬爛王!」老闆娘暴怒。
+
+![img](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/jwt.jpg)
+
+為甚麼小明會被抓到呢? 其實秘密就在右下角的神祕數字裡。
+事實上老闆娘把寄杯的數字動了一些手腳:
+
+> 寄杯數 × 秘密數字，然後只取後兩位
+
+小明寄了五杯，5 × 37 = 185 → 取後兩位 → 角落寫 85。
+
+小明把 5 改成 50，角落還是 85。但老闆娘一算：50 × 37 = 1850，後兩位是 50，跟角落的 85 完全對不上，馬上知道被動過了！
+
+### Cookie-based Session
+前面講的 Session 機制，是把 Session 資料存在 Server 端，Cookie 只存一個隨機的 SessionId。但其實還有另一種做法。
+
+第一種變體叫做 **Cookie-based Session**：與其在 Server 端維護一張大表，不如直接把所有的 Session 資料加密之後塞進 Cookie 裡，這樣 Server 就不需要儲存任何東西了。
+
+要特別釐清的是，「用 Cookie 存 SessionId」跟「Cookie-based Session」是不同的兩件事：
+
+|  | 用 Cookie 存 SessionId | Cookie-based Session |
+|---|---|---|
+| Cookie 存什麼 | 一組隨機 ID | 加密過的完整資料 |
+| 資料放在哪 | Server 的資料庫 | Client 的 Cookie |
+| 主要風險 | SessionId 被盜用 | 加密金鑰被破解 |
+
+缺點也很明顯，Cookie 本身有大小限制（通常是 4KB），存越多東西就越容易超過。
+
+### 那 Hash 呢？
+
+有人可能會想：既然 Hash 可以把任何長度的東西壓縮成固定長度，是不是可以解決大小問題？
+
+其實不行，因為 Hash 跟加密是不同的東西：
+
+- **加密**是雙向的，加密後可以解密，所以 Server 讀得回原始資料
+- **Hash** 是單向的，無法從 Hash 值反推原始資料
+
+所以 Hash 在這裡沒辦法拿來「儲存資料」，但它可以拿來做**防竄改驗證**——這就帶出了 JWT 的概念。
+
+### JWT（JSON Web Token）
+
+JWT 是一種常見的標準格式，長相大概像這樣：
+```
+eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjN9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+```
+
+它其實是三段用 `.` 分開的 base64 字串：
+```
+Header . Payload . Signature
+```
+
+- **Header**：說明用了哪種演算法
+- **Payload**：實際資料，比如 `{ user_id: 123 }`（明文，只是 base64 編碼，**並非加密**）
+- **Signature**：用密鑰對前兩段做 HMAC Hash，產生的簽章
+
+當 Server 收到 JWT，會重新算一次 Signature，然後比對是否一致，就能知道資料有沒有被竄改。
+
+所以 JWT 的重點不是「讓你看不懂資料」，而是「讓你沒辦法偷偷改資料」。因此不要把敏感資訊直接放在 Payload 裡，因為任何人 base64 decode 就看得到了。
+
+你發現了嗎? 其實老闆娘在寄杯的紙條右下角寫的神祕數字其實就是 jwtToken 裡面的 Signature。
+
+## 總結
+
+| 機制 | 資料存放位置 | Cookie / Token 內容 |
+|---|---|---|
+| Session-based | Server | SessionId |
+| Cookie-based Session | Client | 加密後的 Session 資料 |
+| JWT | Client | Token（Payload + Signature） |
+
+簡單來說：
+
+- **Session**：Server 記住資料，Cookie 只存 ID  
+- **Cookie-based Session**：資料加密後存在 Cookie  
+- **JWT**：資料公開但不可竄改，用簽章驗證
+
+最核心的目的其實只有一個：
+
+> **讓原本 stateless 的 HTTP，可以辨識「同一個使用者」。**

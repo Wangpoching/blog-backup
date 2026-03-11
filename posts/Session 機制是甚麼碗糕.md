@@ -131,7 +131,7 @@ cookie 的內容包含 key 還有 value，也設定了在甚麼 domain 瀏覽器
 但當小明隔了一個禮拜去早餐店領寄盃的時候，只見老闆娘拿筆算了一算。
 「操你媽唬爛王!」老闆娘暴怒。
 
-![img](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/jwt.jpg)
+![img](https://raw.githubusercontent.com/Wangpoching/blog-backup/main/assets/images/jwt.png)
 
 為甚麼小明會被抓到呢? 其實秘密就在右下角的神祕數字裡。
 事實上老闆娘把寄杯的數字動了一些手腳:
